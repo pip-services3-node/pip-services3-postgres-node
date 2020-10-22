@@ -150,28 +150,16 @@ class IdentifiableJsonPostgresPersistence extends IdentifiablePostgresPersistenc
                 callback(null, null);
             return;
         }
-        let query = "SELECT * FROM " + this._tableName + " WHERE id=$1";
-        let params = [id];
-        this._client.query(query, params, (err, result) => {
+        let query = "UPDATE " + this._tableName + " SET data=data||$2 WHERE id=$1 RETURNING *";
+        let values = [id, data.getAsObject()];
+        this._client.query(query, values, (err, result) => {
             err = err || null;
-            let item = result && result.rows ? result.rows[0] || null : null;
-            item = this.convertToPublic(item);
-            item = _.defaults(data.getAsObject(), item);
-            let row = this.convertFromPublic(item);
-            let params = this.generateSetParameters(row);
-            let values = this.generateValues(row);
-            values.push(id);
-            let query = "UPDATE " + this._tableName
-                + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
-            this._client.query(query, values, (err, result) => {
-                err = err || null;
-                if (!err)
-                    this._logger.trace(correlationId, "Updated partially in %s with id = %s", this._tableName, id);
-                let newItem = result && result.rows && result.rows.length == 1
-                    ? this.convertToPublic(result.rows[0]) : null;
-                if (callback)
-                    callback(err, newItem);
-            });
+            if (!err)
+                this._logger.trace(correlationId, "Updated partially in %s with id = %s", this._tableName, id);
+            let newItem = result && result.rows && result.rows.length == 1
+                ? this.convertToPublic(result.rows[0]) : null;
+            if (callback)
+                callback(err, newItem);
         });
     }
 }
