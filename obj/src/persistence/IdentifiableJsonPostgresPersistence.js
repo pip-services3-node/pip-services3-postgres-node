@@ -136,6 +136,44 @@ class IdentifiableJsonPostgresPersistence extends IdentifiablePostgresPersistenc
         };
         return result;
     }
+    /**
+     * Updates only few selected fields in a data item.
+     *
+     * @param correlation_id    (optional) transaction id to trace execution through call chain.
+     * @param id                an id of data item to be updated.
+     * @param data              a map with fields to be updated.
+     * @param callback          callback function that receives updated item or error.
+     */
+    updatePartially(correlationId, id, data, callback) {
+        if (data == null || id == null) {
+            if (callback)
+                callback(null, null);
+            return;
+        }
+        let query = "SELECT * FROM " + this._tableName + " WHERE id=$1";
+        let params = [id];
+        this._client.query(query, params, (err, result) => {
+            err = err || null;
+            let item = result && result.rows ? result.rows[0] || null : null;
+            item = this.convertToPublic(item);
+            item = _.defaults(data.getAsObject(), item);
+            let row = this.convertFromPublic(item);
+            let params = this.generateSetParameters(row);
+            let values = this.generateValues(row);
+            values.push(id);
+            let query = "UPDATE " + this._tableName
+                + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
+            this._client.query(query, values, (err, result) => {
+                err = err || null;
+                if (!err)
+                    this._logger.trace(correlationId, "Updated partially in %s with id = %s", this._tableName, id);
+                let newItem = result && result.rows && result.rows.length == 1
+                    ? this.convertToPublic(result.rows[0]) : null;
+                if (callback)
+                    callback(err, newItem);
+            });
+        });
+    }
 }
 exports.IdentifiableJsonPostgresPersistence = IdentifiableJsonPostgresPersistence;
 //# sourceMappingURL=IdentifiableJsonPostgresPersistence.js.map

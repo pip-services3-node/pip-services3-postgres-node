@@ -694,7 +694,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         let params = this.generateParameters(row);
         let values = this.generateValues(row);
 
-        let query = "INSERT INTO " + this._tableName + " (" + columns + ") VALUES (" + params + ")";
+        let query = "INSERT INTO " + this._tableName + " (" + columns + ") VALUES (" + params + ") RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
@@ -702,7 +702,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
                 this._logger.trace(correlationId, "Created in %s with id = %s", this._tableName, row.id);
 
             let newItem = result && result.rows && result.rows.length == 1
-                ? this.convertToPublic(result.rows[0]) : item;
+                ? this.convertToPublic(result.rows[0]) : null;
             callback(err, newItem);
         });
     }

@@ -228,14 +228,17 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
 
         let query = "INSERT INTO " + this._tableName + " (" + columns + ")"
             + " VALUES (" + params + ")"
-            + " ON CONFLICT (id) DO UPDATE SET " + setParams;
+            + " ON CONFLICT (id) DO UPDATE SET " + setParams + " RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
             if (!err)
                 this._logger.trace(correlationId, "Set in %s with id = %s", this._tableName, item.id);
            
-            if (callback) callback(err, item);
+            let newItem = result && result.rows && result.rows.length == 1
+                ? this.convertToPublic(result.rows[0]) : null;
+
+            if (callback) callback(err, newItem);
         });
     }
 
@@ -258,14 +261,17 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
         values.push(item.id);
 
         let query = "UPDATE " + this._tableName
-            + " SET " + params + " WHERE id=$" + values.length;
+            + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
             if (!err)
                 this._logger.trace(correlationId, "Updated in %s with id = %s", this._tableName, item.id);
 
-            if (callback) callback(err, item);
+            let newItem = result && result.rows && result.rows.length == 1
+                ? this.convertToPublic(result.rows[0]) : null;
+
+            if (callback) callback(err, newItem);
         });
     }
 
@@ -285,36 +291,24 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
             return;
         }
 
-        let query = "SELECT * FROM " + this._tableName + " WHERE id=$1";
-        let values = [ id ];        
+        let row = this.convertFromPublicPartial(data.getAsObject());
+        let params = this.generateSetParameters(row);
+        let values = this.generateValues(row);
+        values.push(id);
+
+        let query = "UPDATE " + this._tableName
+            + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
-            if (err) {
-                if (callback) callback;
-            }
+            if (!err)
+                this._logger.trace(correlationId, "Updated partially in %s with id = %s", this._tableName, id);
 
-            let item = result && result.rows? this.convertToPublic(result.rows[0]) : null;            
+            let newItem = result && result.rows && result.rows.length == 1
+                ? this.convertToPublic(result.rows[0]) : null;
 
-            let partialItem = data.getAsObject();
-            item = _.defaults(partialItem, item);
-
-            let row = this.convertFromPublic(item);
-            let params = this.generateSetParameters(row);
-            let values = this.generateValues(row);
-            values.push(id);
-    
-            let query = "UPDATE " + this._tableName
-                + " SET " + params + " WHERE id=$" + values.length;
-    
-            this._client.query(query, values, (err, result) => {
-                err = err || null;
-                if (!err)
-                    this._logger.trace(correlationId, "Updated partially in %s with id = %s", this._tableName, id);
-    
-                if (callback) callback(err, item);
-            });    
-        });
+            if (callback) callback(err, newItem);
+        });    
     }
 
     /**
@@ -325,27 +319,19 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
      * @param callback          (optional) callback function that receives deleted item or error.
      */
     public deleteById(correlationId: string, id: K, callback?: (err: any, item: T) => void): void {
-        let query = "SELECT * FROM " + this._tableName + " WHERE id=$1";
         let values = [ id ];
+
+        let query = "DELETE FROM " + this._tableName + " WHERE id=$1 RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
-            if (err) {
-                if (callback) callback;
-            }
+            if (!err)
+                this._logger.trace(correlationId, "Deleted from %s with id = %s", this._tableName, id);
 
-            let item = result && result.rows? this.convertToPublic(result.rows[0]) : null;            
+            let newItem = result && result.rows && result.rows.length == 1
+                ? this.convertToPublic(result.rows[0]) : null;
 
-            let query = "DELETE FROM " + this._tableName + " WHERE id=$1";
-            this._client.query(query, values, (err, result) => {
-                err = err || null;
-                if (!err)
-                    this._logger.trace(correlationId, "Deleted from %s with id = %s", this._tableName, id);
-    
-                if (callback) {
-                    callback(err, item);
-                }
-            });
+            if (callback) callback(err, newItem);
         });
     }
 
