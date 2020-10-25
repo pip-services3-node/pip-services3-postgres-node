@@ -328,7 +328,7 @@ class PostgresPersistence {
             }
             this._logger.debug(correlationId, 'Table ' + this._tableName + ' does not exist. Creating database objects...');
             // Run all DML commands
-            async.each(this._autoObjects, (dml, callback) => {
+            async.eachSeries(this._autoObjects, (dml, callback) => {
                 this._client.query(dml, (err, result) => {
                     if (err) {
                         this._logger.error(correlationId, err, 'Failed to autocreate database object');
