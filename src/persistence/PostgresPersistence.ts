@@ -217,7 +217,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
             builder += " UNIQUE";
         }
         
-        builder += " INDEX IF NOT EXISTS " + name + " ON " + this._tableName;
+        builder += " INDEX IF NOT EXISTS " + name + " ON " + this.quoteIdentifier(this._tableName);
 
         if (options.type) {
             builder += " " + options.type;
@@ -226,7 +226,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         let fields = "";
         for (let key in keys) {
             if (fields != "") fields += ", ";
-            fields += key;
+            fields += this.quoteIdentifier(key);
             let asc = keys[key];
             if (!asc) fields += " DESC";
         }
@@ -263,6 +263,14 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
     protected convertFromPublic(value: any): any {
         return value;
     }    
+
+    protected quoteIdentifier(value: string): string {
+        if (value == null || value == "") return value;
+
+        if (value[0] == '"') return value;
+
+        return '"' + value + '"';
+    }
 
     /**
 	 * Checks if the component is opened.
@@ -314,7 +322,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
                         err = new ConnectionException(correlationId, "CONNECT_FAILED", "Connection to postgres failed").withCause(err);    
                     } else {
                         this._opened = true;
-                        this._logger.debug(correlationId, "Connected to postgres database %s, collection %s", this._databaseName, this._tableName);                        
+                        this._logger.debug(correlationId, "Connected to postgres database %s, collection %s", this._databaseName, this.quoteIdentifier(this._tableName));                        
                     }
 
                     if (callback) callback(err);
@@ -374,7 +382,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
             return;
         }
 
-        let query = "DELETE FROM " + this._tableName;
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName);
 
         this._client.query(query, (err, result) => {
             if (err) {
@@ -431,7 +439,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         let result = "";
         for (let value of values) {
             if (result != "") result += ",";
-            result += value;
+            result += this.quoteIdentifier(value);
         }
 
         return result;
@@ -466,7 +474,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         let index = 1;
         for (let column in values) {
             if (result != "") result += ",";
-            result += column + "=$" + index;
+            result += this.quoteIdentifier(column) + "=$" + index;
             index++;
         }
 
@@ -499,7 +507,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         sort: any, select: any, callback: (err: any, items: DataPage<T>) => void): void {
         
         select = select && !_.isEmpty(select) ? select : "*"
-        let query = "SELECT " + select + " FROM " + this._tableName;
+        let query = "SELECT " + select + " FROM " + this.quoteIdentifier(this._tableName);
 
         // Adjust max item count based on configuration
         paging = paging || new PagingParams();
@@ -530,7 +538,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
             items = _.map(items, this.convertToPublic);
 
             if (pagingEnabled) {
-                let query = 'SELECT COUNT(*) AS count FROM ' + this._tableName;
+                let query = 'SELECT COUNT(*) AS count FROM ' + this.quoteIdentifier(this._tableName);
                 if (filter != null && filter != "")
                     query += " WHERE " + filter;
 
@@ -566,7 +574,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
     protected getCountByFilter(correlationId: string, filter: any, 
         callback: (err: any, count: number) => void): void {
 
-        let query = 'SELECT COUNT(*) AS count FROM ' + this._tableName;
+        let query = 'SELECT COUNT(*) AS count FROM ' + this.quoteIdentifier(this._tableName);
         if (filter && filter != "")
             query += " WHERE " + filter;
 
@@ -604,7 +612,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         callback: (err: any, items: T[]) => void): void {
     
         select = select && !_.isEmpty(select) ? select : "*"
-        let query = "SELECT " + select + " FROM " + this._tableName;
+        let query = "SELECT " + select + " FROM " + this.quoteIdentifier(this._tableName);
 
         if (filter && filter != "")
             query += " WHERE " + filter;
@@ -639,7 +647,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
      * @param callback          callback function that receives a random item or error.
      */
     protected getOneRandom(correlationId: string, filter: any, callback: (err: any, item: T) => void): void {
-        let query = 'SELECT COUNT(*) AS count FROM ' + this._tableName;
+        let query = 'SELECT COUNT(*) AS count FROM ' + this.quoteIdentifier(this._tableName);
         if (filter && filter != "")
             query += " WHERE " + filter;
 
@@ -650,7 +658,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
                 return;
             }
            
-            let query = "SELECT * FROM " + this._tableName;
+            let query = "SELECT * FROM " + this.quoteIdentifier(this._tableName);
     
             if (filter && filter != "")
                 query += " WHERE " + filter;
@@ -694,7 +702,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         let params = this.generateParameters(row);
         let values = this.generateValues(row);
 
-        let query = "INSERT INTO " + this._tableName + " (" + columns + ") VALUES (" + params + ") RETURNING *";
+        let query = "INSERT INTO " + this.quoteIdentifier(this._tableName) + " (" + columns + ") VALUES (" + params + ") RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
@@ -718,7 +726,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
      * @param callback          (optional) callback function that receives error or null for success.
      */
     public deleteByFilter(correlationId: string, filter: string, callback?: (err: any) => void): void {
-        let query = "DELETE FROM " + this._tableName;
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName);
         if (filter != null && filter != "")
             query += " WHERE " + filter;
 

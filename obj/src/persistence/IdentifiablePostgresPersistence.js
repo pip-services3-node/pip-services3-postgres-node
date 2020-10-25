@@ -118,7 +118,7 @@ class IdentifiablePostgresPersistence extends PostgresPersistence_1.PostgresPers
      */
     getListByIds(correlationId, ids, callback) {
         let params = this.generateParameters(ids);
-        let query = "SELECT * FROM " + this._tableName + " WHERE id IN(" + params + ")";
+        let query = "SELECT * FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\" IN(" + params + ")";
         this._client.query(query, ids, (err, result) => {
             err = err || null;
             if (err) {
@@ -140,7 +140,7 @@ class IdentifiablePostgresPersistence extends PostgresPersistence_1.PostgresPers
      * @param callback          callback function that receives data item or error.
      */
     getOneById(correlationId, id, callback) {
-        let query = "SELECT * FROM " + this._tableName + " WHERE id=$1";
+        let query = "SELECT * FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\"=$1";
         let params = [id];
         this._client.query(query, params, (err, result) => {
             err = err || null;
@@ -197,9 +197,9 @@ class IdentifiablePostgresPersistence extends PostgresPersistence_1.PostgresPers
         let params = this.generateParameters(row);
         let setParams = this.generateSetParameters(row);
         let values = this.generateValues(row);
-        let query = "INSERT INTO " + this._tableName + " (" + columns + ")"
+        let query = "INSERT INTO " + this.quoteIdentifier(this._tableName) + " (" + columns + ")"
             + " VALUES (" + params + ")"
-            + " ON CONFLICT (id) DO UPDATE SET " + setParams + " RETURNING *";
+            + " ON CONFLICT (\"id\") DO UPDATE SET " + setParams + " RETURNING *";
         this._client.query(query, values, (err, result) => {
             err = err || null;
             if (!err)
@@ -227,8 +227,8 @@ class IdentifiablePostgresPersistence extends PostgresPersistence_1.PostgresPers
         let params = this.generateSetParameters(row);
         let values = this.generateValues(row);
         values.push(item.id);
-        let query = "UPDATE " + this._tableName
-            + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
+        let query = "UPDATE " + this.quoteIdentifier(this._tableName)
+            + " SET " + params + " WHERE \"id\"=$" + values.length + " RETURNING *";
         this._client.query(query, values, (err, result) => {
             err = err || null;
             if (!err)
@@ -257,8 +257,8 @@ class IdentifiablePostgresPersistence extends PostgresPersistence_1.PostgresPers
         let params = this.generateSetParameters(row);
         let values = this.generateValues(row);
         values.push(id);
-        let query = "UPDATE " + this._tableName
-            + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
+        let query = "UPDATE " + this.quoteIdentifier(this._tableName)
+            + " SET " + params + " WHERE \"id\"=$" + values.length + " RETURNING *";
         this._client.query(query, values, (err, result) => {
             err = err || null;
             if (!err)
@@ -278,7 +278,7 @@ class IdentifiablePostgresPersistence extends PostgresPersistence_1.PostgresPers
      */
     deleteById(correlationId, id, callback) {
         let values = [id];
-        let query = "DELETE FROM " + this._tableName + " WHERE id=$1 RETURNING *";
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\"=$1 RETURNING *";
         this._client.query(query, values, (err, result) => {
             err = err || null;
             if (!err)
@@ -298,7 +298,7 @@ class IdentifiablePostgresPersistence extends PostgresPersistence_1.PostgresPers
      */
     deleteByIds(correlationId, ids, callback) {
         let params = this.generateParameters(ids);
-        let query = "DELETE FROM " + this._tableName + " WHERE id IN(" + params + ")";
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\" IN(" + params + ")";
         this._client.query(query, ids, (err, result) => {
             let count = result ? result.rowCount : 0;
             err = err || null;

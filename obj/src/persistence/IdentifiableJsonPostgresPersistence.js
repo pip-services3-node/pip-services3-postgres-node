@@ -106,8 +106,8 @@ class IdentifiableJsonPostgresPersistence extends IdentifiablePostgresPersistenc
      * @param dataType type of the data column (default: JSONB)
      */
     ensureTable(idType = 'TEXT', dataType = 'JSONB') {
-        let query = "CREATE TABLE IF NOT EXISTS " + this._tableName
-            + " (id " + idType + " PRIMARY KEY, data " + dataType + ")";
+        let query = "CREATE TABLE IF NOT EXISTS " + this.quoteIdentifier(this._tableName)
+            + " (\"id\" " + idType + " PRIMARY KEY, \"data\" " + dataType + ")";
         this.autoCreateObject(query);
     }
     /**
@@ -150,7 +150,7 @@ class IdentifiableJsonPostgresPersistence extends IdentifiablePostgresPersistenc
                 callback(null, null);
             return;
         }
-        let query = "UPDATE " + this._tableName + " SET data=data||$2 WHERE id=$1 RETURNING *";
+        let query = "UPDATE " + this.quoteIdentifier(this._tableName) + " SET \"data\"=\"data\"||$2 WHERE \"id\"=$1 RETURNING *";
         let values = [id, data.getAsObject()];
         this._client.query(query, values, (err, result) => {
             err = err || null;

@@ -132,7 +132,7 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
         callback: (err: any, items: T[]) => void): void {
 
         let params = this.generateParameters(ids);
-        let query = "SELECT * FROM " + this._tableName + " WHERE id IN(" + params + ")";
+        let query = "SELECT * FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\" IN(" + params + ")";
 
         this._client.query(query, ids, (err, result) => {
             err = err || null;
@@ -159,7 +159,7 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
      * @param callback          callback function that receives data item or error.
      */
     public getOneById(correlationId: string, id: K, callback: (err: any, item: T) => void): void {
-        let query = "SELECT * FROM " + this._tableName + " WHERE id=$1";
+        let query = "SELECT * FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\"=$1";
         let params = [ id ];
 
         this._client.query(query, params, (err, result) => {
@@ -226,9 +226,9 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
         let setParams = this.generateSetParameters(row);
         let values = this.generateValues(row);
 
-        let query = "INSERT INTO " + this._tableName + " (" + columns + ")"
+        let query = "INSERT INTO " + this.quoteIdentifier(this._tableName) + " (" + columns + ")"
             + " VALUES (" + params + ")"
-            + " ON CONFLICT (id) DO UPDATE SET " + setParams + " RETURNING *";
+            + " ON CONFLICT (\"id\") DO UPDATE SET " + setParams + " RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
@@ -260,8 +260,8 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
         let values = this.generateValues(row);
         values.push(item.id);
 
-        let query = "UPDATE " + this._tableName
-            + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
+        let query = "UPDATE " + this.quoteIdentifier(this._tableName)
+            + " SET " + params + " WHERE \"id\"=$" + values.length + " RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
@@ -296,8 +296,8 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
         let values = this.generateValues(row);
         values.push(id);
 
-        let query = "UPDATE " + this._tableName
-            + " SET " + params + " WHERE id=$" + values.length + " RETURNING *";
+        let query = "UPDATE " + this.quoteIdentifier(this._tableName)
+            + " SET " + params + " WHERE \"id\"=$" + values.length + " RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
@@ -321,7 +321,7 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
     public deleteById(correlationId: string, id: K, callback?: (err: any, item: T) => void): void {
         let values = [ id ];
 
-        let query = "DELETE FROM " + this._tableName + " WHERE id=$1 RETURNING *";
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\"=$1 RETURNING *";
 
         this._client.query(query, values, (err, result) => {
             err = err || null;
@@ -344,7 +344,7 @@ export class IdentifiablePostgresPersistence<T extends IIdentifiable<K>, K> exte
      */
     public deleteByIds(correlationId: string, ids: K[], callback?: (err: any) => void): void {
         let params = this.generateParameters(ids);
-        let query = "DELETE FROM " + this._tableName + " WHERE id IN(" + params + ")";
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName) + " WHERE \"id\" IN(" + params + ")";
 
         this._client.query(query, ids, (err, result) => {
             let count = result ? result.rowCount : 0;

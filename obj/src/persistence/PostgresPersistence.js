@@ -157,7 +157,7 @@ class PostgresPersistence {
         if (options.unique) {
             builder += " UNIQUE";
         }
-        builder += " INDEX IF NOT EXISTS " + name + " ON " + this._tableName;
+        builder += " INDEX IF NOT EXISTS " + name + " ON " + this.quoteIdentifier(this._tableName);
         if (options.type) {
             builder += " " + options.type;
         }
@@ -165,7 +165,7 @@ class PostgresPersistence {
         for (let key in keys) {
             if (fields != "")
                 fields += ", ";
-            fields += key;
+            fields += this.quoteIdentifier(key);
             let asc = keys[key];
             if (!asc)
                 fields += " DESC";
@@ -197,6 +197,13 @@ class PostgresPersistence {
      */
     convertFromPublic(value) {
         return value;
+    }
+    quoteIdentifier(value) {
+        if (value == null || value == "")
+            return value;
+        if (value[0] == '"')
+            return value;
+        return '"' + value + '"';
     }
     /**
      * Checks if the component is opened.
@@ -244,7 +251,7 @@ class PostgresPersistence {
                     }
                     else {
                         this._opened = true;
-                        this._logger.debug(correlationId, "Connected to postgres database %s, collection %s", this._databaseName, this._tableName);
+                        this._logger.debug(correlationId, "Connected to postgres database %s, collection %s", this._databaseName, this.quoteIdentifier(this._tableName));
                     }
                     if (callback)
                         callback(err);
@@ -299,7 +306,7 @@ class PostgresPersistence {
                 callback(new Error('Table name is not defined'));
             return;
         }
-        let query = "DELETE FROM " + this._tableName;
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName);
         this._client.query(query, (err, result) => {
             if (err) {
                 err = new pip_services3_commons_node_4.ConnectionException(correlationId, "CONNECT_FAILED", "Connection to postgres failed")
@@ -349,7 +356,7 @@ class PostgresPersistence {
         for (let value of values) {
             if (result != "")
                 result += ",";
-            result += value;
+            result += this.quoteIdentifier(value);
         }
         return result;
     }
@@ -381,7 +388,7 @@ class PostgresPersistence {
         for (let column in values) {
             if (result != "")
                 result += ",";
-            result += column + "=$" + index;
+            result += this.quoteIdentifier(column) + "=$" + index;
             index++;
         }
         return result;
@@ -409,7 +416,7 @@ class PostgresPersistence {
      */
     getPageByFilter(correlationId, filter, paging, sort, select, callback) {
         select = select && !_.isEmpty(select) ? select : "*";
-        let query = "SELECT " + select + " FROM " + this._tableName;
+        let query = "SELECT " + select + " FROM " + this.quoteIdentifier(this._tableName);
         // Adjust max item count based on configuration
         paging = paging || new pip_services3_commons_node_2.PagingParams();
         let skip = paging.getSkip(-1);
@@ -433,7 +440,7 @@ class PostgresPersistence {
                 this._logger.trace(correlationId, "Retrieved %d from %s", items.length, this._tableName);
             items = _.map(items, this.convertToPublic);
             if (pagingEnabled) {
-                let query = 'SELECT COUNT(*) AS count FROM ' + this._tableName;
+                let query = 'SELECT COUNT(*) AS count FROM ' + this.quoteIdentifier(this._tableName);
                 if (filter != null && filter != "")
                     query += " WHERE " + filter;
                 this._client.query(query, (err, result) => {
@@ -465,7 +472,7 @@ class PostgresPersistence {
      * @param callback          callback function that receives a data page or error.
      */
     getCountByFilter(correlationId, filter, callback) {
-        let query = 'SELECT COUNT(*) AS count FROM ' + this._tableName;
+        let query = 'SELECT COUNT(*) AS count FROM ' + this.quoteIdentifier(this._tableName);
         if (filter && filter != "")
             query += " WHERE " + filter;
         this._client.query(query, (err, result) => {
@@ -496,7 +503,7 @@ class PostgresPersistence {
      */
     getListByFilter(correlationId, filter, sort, select, callback) {
         select = select && !_.isEmpty(select) ? select : "*";
-        let query = "SELECT " + select + " FROM " + this._tableName;
+        let query = "SELECT " + select + " FROM " + this.quoteIdentifier(this._tableName);
         if (filter && filter != "")
             query += " WHERE " + filter;
         if (sort && !_.isEmpty(sort))
@@ -525,7 +532,7 @@ class PostgresPersistence {
      * @param callback          callback function that receives a random item or error.
      */
     getOneRandom(correlationId, filter, callback) {
-        let query = 'SELECT COUNT(*) AS count FROM ' + this._tableName;
+        let query = 'SELECT COUNT(*) AS count FROM ' + this.quoteIdentifier(this._tableName);
         if (filter && filter != "")
             query += " WHERE " + filter;
         this._client.query(query, (err, result) => {
@@ -534,7 +541,7 @@ class PostgresPersistence {
                 callback(err, null);
                 return;
             }
-            let query = "SELECT * FROM " + this._tableName;
+            let query = "SELECT * FROM " + this.quoteIdentifier(this._tableName);
             if (filter && filter != "")
                 query += " WHERE " + filter;
             let count = result.rows && result.rows.length == 1 ? result.rows[0].count : 0;
@@ -569,7 +576,7 @@ class PostgresPersistence {
         let columns = this.generateColumns(row);
         let params = this.generateParameters(row);
         let values = this.generateValues(row);
-        let query = "INSERT INTO " + this._tableName + " (" + columns + ") VALUES (" + params + ") RETURNING *";
+        let query = "INSERT INTO " + this.quoteIdentifier(this._tableName) + " (" + columns + ") VALUES (" + params + ") RETURNING *";
         this._client.query(query, values, (err, result) => {
             err = err || null;
             if (!err)
@@ -590,7 +597,7 @@ class PostgresPersistence {
      * @param callback          (optional) callback function that receives error or null for success.
      */
     deleteByFilter(correlationId, filter, callback) {
-        let query = "DELETE FROM " + this._tableName;
+        let query = "DELETE FROM " + this.quoteIdentifier(this._tableName);
         if (filter != null && filter != "")
             query += " WHERE " + filter;
         this._client.query(query, (err, result) => {

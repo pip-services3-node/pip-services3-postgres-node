@@ -158,6 +158,7 @@ export declare class PostgresPersistence<T> implements IReferenceable, IUnrefere
      * @returns converted object in internal format.
      */
     protected convertFromPublic(value: any): any;
+    protected quoteIdentifier(value: string): string;
     /**
      * Checks if the component is opened.
      *
