@@ -23,7 +23,7 @@ export class DummyJsonPostgresPersistence
 
         let filterCondition: string = "";
         if (key != null)
-            filterCondition += "data->key='" + key + "'";
+            filterCondition += "data->>'key'='" + key + "'";
 
         super.getPageByFilter(correlationId, filterCondition, paging, null, null, callback);
     }
@@ -35,7 +35,7 @@ export class DummyJsonPostgresPersistence
 
         let filterCondition: string = "";
         if (key != null)
-            filterCondition += "data->key='" + key + "'";
+            filterCondition += "data->>'key'='" + key + "'";
 
         super.getCountByFilter(correlationId, filterCondition, callback);
     }
