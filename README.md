@@ -190,7 +190,6 @@ Configuration for your microservice that includes postgresql persistence may loo
 ...
 {{#if POSTGRES_ENABLED}}
 - descriptor: pip-services:connection:postgres:con1:1.0
-  table: {{POSTGRES_TABLE}}{{#unless POSTGRES_TABLE}}myobjects{{/unless}}
   connection:
     uri: {{{POSTGRES_SERVICE_URI}}}
     host: {{{POSTGRES_SERVICE_HOST}}}{{#unless POSTGRES_SERVICE_HOST}}localhost{{/unless}}
@@ -203,6 +202,7 @@ Configuration for your microservice that includes postgresql persistence may loo
 - descriptor: myservice:persistence:postgres:default:1.0
   dependencies:
     connection: pip-services:connection:postgres:con1:1.0
+  table: {{POSTGRES_TABLE}}{{#unless POSTGRES_TABLE}}myobjects{{/unless}}
 {{/if}}
 ...
 ```
