@@ -226,12 +226,12 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         let fields = "";
         for (let key in keys) {
             if (fields != "") fields += ", ";
-            fields += this.quoteIdentifier(key);
+            fields += key
             let asc = keys[key];
             if (!asc) fields += " DESC";
         }
 
-        builder += "(" + fields + ")";
+        builder += " (" + fields + ")";
 
         this.autoCreateObject(builder);       
     }

@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DefaultPostgresFactory = void 0;
 /**
  * @module build
  * @preferred

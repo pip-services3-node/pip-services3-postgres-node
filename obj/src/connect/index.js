@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PostgresConnectionResolver = void 0;
 /**
  * @module connect
  * @preferred
