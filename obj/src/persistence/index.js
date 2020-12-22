@@ -1,15 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.IdentifiableJsonPostgresPersistence = exports.IdentifiablePostgresPersistence = exports.PostgresPersistence = exports.PostgresConnection = void 0;
 /**
  * @module persistence
  * @preferred
  */
 var PostgresConnection_1 = require("./PostgresConnection");
-exports.PostgresConnection = PostgresConnection_1.PostgresConnection;
+Object.defineProperty(exports, "PostgresConnection", { enumerable: true, get: function () { return PostgresConnection_1.PostgresConnection; } });
 var PostgresPersistence_1 = require("./PostgresPersistence");
-exports.PostgresPersistence = PostgresPersistence_1.PostgresPersistence;
+Object.defineProperty(exports, "PostgresPersistence", { enumerable: true, get: function () { return PostgresPersistence_1.PostgresPersistence; } });
 var IdentifiablePostgresPersistence_1 = require("./IdentifiablePostgresPersistence");
-exports.IdentifiablePostgresPersistence = IdentifiablePostgresPersistence_1.IdentifiablePostgresPersistence;
+Object.defineProperty(exports, "IdentifiablePostgresPersistence", { enumerable: true, get: function () { return IdentifiablePostgresPersistence_1.IdentifiablePostgresPersistence; } });
 var IdentifiableJsonPostgresPersistence_1 = require("./IdentifiableJsonPostgresPersistence");
-exports.IdentifiableJsonPostgresPersistence = IdentifiableJsonPostgresPersistence_1.IdentifiableJsonPostgresPersistence;
+Object.defineProperty(exports, "IdentifiableJsonPostgresPersistence", { enumerable: true, get: function () { return IdentifiableJsonPostgresPersistence_1.IdentifiableJsonPostgresPersistence; } });
 //# sourceMappingURL=index.js.map
