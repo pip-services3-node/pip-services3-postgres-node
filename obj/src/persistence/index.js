@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.IdentifiableJsonPostgresPersistence = exports.IdentifiablePostgresPersistence = exports.PostgresPersistence = exports.PostgresConnection = void 0;
 /**
  * @module persistence
  * @preferred

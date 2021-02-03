@@ -279,5 +279,5 @@ export declare class PostgresPersistence<T> implements IReferenceable, IUnrefere
      * @param filter            (optional) a filter JSON object.
      * @param callback          (optional) callback function that receives error or null for success.
      */
-    deleteByFilter(correlationId: string, filter: string, callback?: (err: any) => void): void;
+    deleteByFilter(correlationId: string, filter: any, callback?: (err: any) => void): void;
 }

@@ -725,7 +725,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
      * @param filter            (optional) a filter JSON object.
      * @param callback          (optional) callback function that receives error or null for success.
      */
-    public deleteByFilter(correlationId: string, filter: string, callback?: (err: any) => void): void {
+    public deleteByFilter(correlationId: string, filter: any, callback?: (err: any) => void): void {
         let query = "DELETE FROM " + this.quoteIdentifier(this._tableName);
         if (filter != null && filter != "")
             query += " WHERE " + filter;
