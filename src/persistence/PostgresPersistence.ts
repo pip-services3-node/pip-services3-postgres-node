@@ -266,7 +266,6 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
      */
     protected defineSchema(): void {
         // Todo: override in chile classes
-        this.clearSchema();
     }
 
     /** 

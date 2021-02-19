@@ -200,7 +200,6 @@ class PostgresPersistence {
      */
     defineSchema() {
         // Todo: override in chile classes
-        this.clearSchema();
     }
     /**
      * Converts object value from internal to public format.

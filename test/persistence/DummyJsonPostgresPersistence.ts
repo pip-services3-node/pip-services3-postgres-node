@@ -15,7 +15,7 @@ export class DummyJsonPostgresPersistence
     }
 
     protected defineSchema(): void {
-        super.defineSchema();
+        this.clearSchema();
         this.ensureTable();
         this.ensureIndex(this._tableName + '_json_key', { "(data->>'key')": 1 }, { unique: true });
     }
