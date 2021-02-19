@@ -88,7 +88,7 @@ class PostgresPersistence {
      * @param tableName    (optional) a table name.
      */
     constructor(tableName) {
-        this._autoObjects = [];
+        this._schemaStatements = [];
         /**
          * The dependency resolver.
          */
@@ -109,9 +109,9 @@ class PostgresPersistence {
         config = config.setDefaults(PostgresPersistence._defaultConfig);
         this._config = config;
         this._dependencyResolver.configure(config);
+        this._maxPageSize = config.getAsIntegerWithDefault("options.max_page_size", this._maxPageSize);
         this._tableName = config.getAsStringWithDefault("collection", this._tableName);
         this._tableName = config.getAsStringWithDefault("table", this._tableName);
-        this._maxPageSize = config.getAsIntegerWithDefault("options.max_page_size", this._maxPageSize);
     }
     /**
      * Sets references to dependent components.
@@ -158,7 +158,7 @@ class PostgresPersistence {
         if (options.unique) {
             builder += " UNIQUE";
         }
-        builder += " INDEX IF NOT EXISTS " + name + " ON " + this.quoteIdentifier(this._tableName);
+        builder += " INDEX IF NOT EXISTS " + this.quoteIdentifier(name) + " ON " + this.quoteIdentifier(this._tableName);
         if (options.type) {
             builder += " " + options.type;
         }
@@ -172,14 +172,35 @@ class PostgresPersistence {
                 fields += " DESC";
         }
         builder += " (" + fields + ")";
-        this.autoCreateObject(builder);
+        this.ensureSchema(builder);
     }
     /**
-     * Adds index definition to create it on opening
-     * @param dmlStatement DML statement to autocreate database object
+     * Adds a statement to schema definition.
+     * This is a deprecated method. Use ensureSchema instead.
+     * @param schemaStatement a statement to be added to the schema
      */
-    autoCreateObject(dmlStatement) {
-        this._autoObjects.push(dmlStatement);
+    autoCreateObject(schemaStatement) {
+        this.ensureSchema(schemaStatement);
+    }
+    /**
+     * Adds a statement to schema definition
+     * @param schemaStatement a statement to be added to the schema
+     */
+    ensureSchema(schemaStatement) {
+        this._schemaStatements.push(schemaStatement);
+    }
+    /**
+     * Clears all auto-created objects
+     */
+    clearSchema() {
+        this._schemaStatements = [];
+    }
+    /**
+     * Defines database schema via auto create objects or convenience methods.
+     */
+    defineSchema() {
+        // Todo: override in chile classes
+        this.clearSchema();
     }
     /**
      * Converts object value from internal to public format.
@@ -244,8 +265,10 @@ class PostgresPersistence {
             else {
                 this._client = this._connection.getConnection();
                 this._databaseName = this._connection.getDatabaseName();
+                // Define database schema
+                this.defineSchema();
                 // Recreate objects
-                this.autoCreateObjects(correlationId, (err) => {
+                this.createSchema(correlationId, (err) => {
                     if (err) {
                         this._client == null;
                         err = new pip_services3_commons_node_4.ConnectionException(correlationId, "CONNECT_FAILED", "Connection to postgres failed").withCause(err);
@@ -317,8 +340,8 @@ class PostgresPersistence {
                 callback(err);
         });
     }
-    autoCreateObjects(correlationId, callback) {
-        if (this._autoObjects == null || this._autoObjects.length == 0) {
+    createSchema(correlationId, callback) {
+        if (this._schemaStatements == null || this._schemaStatements.length == 0) {
             callback(null);
             return null;
         }
@@ -336,7 +359,7 @@ class PostgresPersistence {
             }
             this._logger.debug(correlationId, 'Table ' + this._tableName + ' does not exist. Creating database objects...');
             // Run all DML commands
-            async.eachSeries(this._autoObjects, (dml, callback) => {
+            async.eachSeries(this._schemaStatements, (dml, callback) => {
                 this._client.query(dml, (err, result) => {
                     if (err) {
                         this._logger.error(correlationId, err, 'Failed to autocreate database object');

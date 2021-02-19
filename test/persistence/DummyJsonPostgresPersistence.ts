@@ -12,8 +12,12 @@ export class DummyJsonPostgresPersistence
 {
     public constructor() {
         super('dummies_json');
+    }
+
+    protected defineSchema(): void {
+        super.defineSchema();
         this.ensureTable();
-        this.ensureIndex('dummies_json_key', { "(data->>'key')": 1 }, { unique: true });
+        this.ensureIndex(this._tableName + '_json_key', { "(data->>'key')": 1 }, { unique: true });
     }
 
     public getPageByFilter(correlationId: string, filter: FilterParams, paging: PagingParams, 

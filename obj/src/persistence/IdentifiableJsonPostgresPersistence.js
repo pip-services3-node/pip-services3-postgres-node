@@ -109,7 +109,7 @@ class IdentifiableJsonPostgresPersistence extends IdentifiablePostgresPersistenc
     ensureTable(idType = 'TEXT', dataType = 'JSONB') {
         let query = "CREATE TABLE IF NOT EXISTS " + this.quoteIdentifier(this._tableName)
             + " (\"id\" " + idType + " PRIMARY KEY, \"data\" " + dataType + ")";
-        this.autoCreateObject(query);
+        this.ensureSchema(query);
     }
     /**
      * Converts object value from internal to public format.

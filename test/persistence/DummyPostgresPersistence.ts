@@ -12,8 +12,12 @@ export class DummyPostgresPersistence
 {
     public constructor() {
         super('dummies');
-        this.autoCreateObject('CREATE TABLE dummies (id TEXT PRIMARY KEY, key TEXT, content TEXT)');
-        this.ensureIndex('dummies_key', { key: 1 }, { unique: true });
+    }
+
+    protected defineSchema(): void {
+        super.defineSchema();
+        this.ensureSchema('CREATE TABLE ' + this._tableName + ' (id TEXT PRIMARY KEY, key TEXT, content TEXT)');
+        this.ensureIndex(this._tableName + '_key', { key: 1 }, { unique: true });
     }
 
     public getPageByFilter(correlationId: string, filter: FilterParams, paging: PagingParams, 

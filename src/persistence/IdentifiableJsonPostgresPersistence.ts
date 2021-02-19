@@ -113,7 +113,7 @@ export class IdentifiableJsonPostgresPersistence<T extends IIdentifiable<K>, K> 
     protected ensureTable(idType: string = 'TEXT', dataType: string = 'JSONB') {
         let query = "CREATE TABLE IF NOT EXISTS " + this.quoteIdentifier(this._tableName)
             + " (\"id\" " + idType + " PRIMARY KEY, \"data\" " + dataType + ")";
-        this.autoCreateObject(query);
+        this.ensureSchema(query);
     }
 
     /** 

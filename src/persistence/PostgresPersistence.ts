@@ -108,7 +108,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
     private _references: IReferences;
     private _opened: boolean;
     private _localConnection: boolean;
-    private _autoObjects: string[] = [];
+    private _schemaStatements: string[] = [];
 
     /**
      * The dependency resolver.
@@ -159,9 +159,10 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
 
         this._dependencyResolver.configure(config);
 
+        this._maxPageSize = config.getAsIntegerWithDefault("options.max_page_size", this._maxPageSize);
+
         this._tableName = config.getAsStringWithDefault("collection", this._tableName);
         this._tableName = config.getAsStringWithDefault("table", this._tableName);
-        this._maxPageSize = config.getAsIntegerWithDefault("options.max_page_size", this._maxPageSize);
     }
 
     /**
@@ -217,7 +218,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
             builder += " UNIQUE";
         }
         
-        builder += " INDEX IF NOT EXISTS " + name + " ON " + this.quoteIdentifier(this._tableName);
+        builder += " INDEX IF NOT EXISTS " + this.quoteIdentifier(name) + " ON " + this.quoteIdentifier(this._tableName);
 
         if (options.type) {
             builder += " " + options.type;
@@ -233,15 +234,39 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
 
         builder += " (" + fields + ")";
 
-        this.autoCreateObject(builder);       
+        this.ensureSchema(builder);       
     }
 
     /**
-     * Adds index definition to create it on opening
-     * @param dmlStatement DML statement to autocreate database object
+     * Adds a statement to schema definition.
+     * This is a deprecated method. Use ensureSchema instead.
+     * @param schemaStatement a statement to be added to the schema
      */
-    protected autoCreateObject(dmlStatement: string): void {
-        this._autoObjects.push(dmlStatement);
+    protected autoCreateObject(schemaStatement: string): void {
+        this.ensureSchema(schemaStatement);
+    }
+
+    /**
+     * Adds a statement to schema definition
+     * @param schemaStatement a statement to be added to the schema
+     */
+    protected ensureSchema(schemaStatement: string): void {
+        this._schemaStatements.push(schemaStatement);
+    }
+
+    /**
+     * Clears all auto-created objects
+     */
+    protected clearSchema(): void {
+        this._schemaStatements = [];
+    }
+
+    /**
+     * Defines database schema via auto create objects or convenience methods.
+     */
+    protected defineSchema(): void {
+        // Todo: override in chile classes
+        this.clearSchema();
     }
 
     /** 
@@ -315,8 +340,11 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
                 this._client = this._connection.getConnection();
                 this._databaseName = this._connection.getDatabaseName();
                 
+                // Define database schema
+                this.defineSchema();
+
                 // Recreate objects
-                this.autoCreateObjects(correlationId, (err) => {
+                this.createSchema(correlationId, (err) => {
                     if (err) {
                         this._client == null;
                         err = new ConnectionException(correlationId, "CONNECT_FAILED", "Connection to postgres failed").withCause(err);    
@@ -394,8 +422,8 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
         });
     }
 
-    protected autoCreateObjects(correlationId: string, callback: (err: any) => void): void {
-        if (this._autoObjects == null || this._autoObjects.length == 0) {
+    protected createSchema(correlationId: string, callback: (err: any) => void): void {
+        if (this._schemaStatements == null || this._schemaStatements.length == 0) {
             callback(null);
             return null;
         }
@@ -417,7 +445,7 @@ export class PostgresPersistence<T> implements IReferenceable, IUnreferenceable,
             this._logger.debug(correlationId, 'Table ' + this._tableName + ' does not exist. Creating database objects...');
 
             // Run all DML commands
-            async.eachSeries(this._autoObjects, (dml, callback) => {
+            async.eachSeries(this._schemaStatements, (dml, callback) => {
                 this._client.query(dml, (err, result) => {
                     if (err) {
                         this._logger.error(correlationId, err, 'Failed to autocreate database object');
