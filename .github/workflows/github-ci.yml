@@ -4,7 +4,7 @@ name: Pip.Services Postgres Node.js Delivery
 on: 
   push:
     branches:
-      - master
+      - main
     paths:
     - '**'
     - '!README.md'
